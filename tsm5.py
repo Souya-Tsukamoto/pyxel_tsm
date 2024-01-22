@@ -264,6 +264,8 @@ class App():
     target_b = []
     target_f = []
     target_m = []
+    start_time = 0
+    start_frag = False
     w1 = 0 #world1
     def __init__(self):
         pyxel.init(App.width, App.height)
@@ -313,7 +315,10 @@ class App():
                 pyxel.blt(x + (i * 12), y, 0, mapn, 17, 17, 17, 0)
 
     def update(self):
-        if pyxel.frame_count < 600:
+        if pyxel.btnp(pyxel.KEY_SPACE) and App.start_frag != True:
+            App.start_time = pyxel.frame_count
+            App.start_frag = True
+        if pyxel.frame_count - App.start_time < 600 and App.start_frag:
             i = 0
             for b in self.ball:
                 b.move(App)
@@ -352,15 +357,22 @@ class App():
 
 
     def draw(self):
-        if pyxel.frame_count < 600:
+        if not App.start_frag:
+            pyxel.rect(245, 98, 75, 10, 5)
+            pyxel.rect(265, 98, 22, 10, 8)
+            pyxel.text(250, 100, "FIT STORY MANIA!!", 10)
+            pyxel.text(50, 200, "Left User: WASD & SPACE", 8)
+            pyxel.text(400, 200, "Right USER: UP, LEFT, DOWN, RIGHT & ENTER", 6)
+            pyxel.text(250, 350, "Push SPACE KEY to Start!!", 11)
+        elif pyxel.frame_count - App.start_time < 600 and App.start_frag:
             self.reload()
             for b in self.ball:
                 b.bdraw(self.w1.y1, self.w1.z1, self.w1.y2, self.w1.z2, App)
             #    pyxel.text(300, 200, str(b.z), 0)
             #pyxel.text(300, 225, str(self.totalpoint), 0)
-            if pyxel.frame_count > 450:
-                App.textload((600 - pyxel.frame_count)//30+1, 300, 30, 2, 0)
-                App.textload((600 - pyxel.frame_count)//30+1, 300, App.height - 100, 2, 0)
+            if pyxel.frame_count - App.start_time > 450:
+                App.textload((600 - pyxel.frame_count + App.start_time)//30+1, 300, 30, 2, 0)
+                App.textload((600 - pyxel.frame_count + App.start_time)//30+1, 300, App.height - 100, 2, 0)
             #pyxel.text(300, 0, str(pyxel.frame_count), 0)
             for f in self.forcus:
                 if f.user == 0:
