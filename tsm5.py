@@ -1,6 +1,5 @@
-#全体をapp~~関数~~ classで囲ってball.move(app())とかすることで相互に使えるようにしよう！
 import pyxel
-
+restart_frag = True
 
 class Forcus():
     def __init__(self, App, user):
@@ -265,13 +264,27 @@ class App():
     target_f = []
     target_m = []
     start_time = 0
+    game_process_time = 0
     start_frag = False
     w1 = 0 #world1
+
     def __init__(self):
         pyxel.init(App.width, App.height)
         pyxel.load("num.pyxres")
-    
+        self.init()    
+        pyxel.run(self.update, self.draw)
+
+    def init(self): #処理リセット用
+        App.start_frag = False
         self.ball = []
+        App.forcus.clear()
+        App.totalpoint_l = 0
+        App.totalpoint_r = 0
+        App.target_b.clear()
+        App.target_f.clear()
+        App.target_m.clear()
+        App.game_process_time = 0
+        App.start_time = 0
         App.w1 = World(App)
         App.forcus.append(Forcus(App, 0))
         App.forcus.append(Forcus(App, 1))
@@ -280,9 +293,8 @@ class App():
             App.target_f.append(Target(App, i, 10, 1, 2))
         for i in range(3):
             App.target_m.append(M_Target(App, 1, 2, 0 + i * -200, 2))
-        pyxel.run(self.update, self.draw)
 
-    def reload(self):
+    def reload(self): #描画リセット用
         pyxel.cls(6)
         for t in self.target_b:
             t.tdraw()
@@ -294,7 +306,7 @@ class App():
         self.w1.wdraw_f(App)
         
 
-    def textload(num, x, y, size, col):
+    def textload(num, x, y, size, col): #数字フォント読み込み　汎用
         if size == 1:
             x = x - (3 * len(str(num)))
             leng = len(str(num))
@@ -318,7 +330,11 @@ class App():
         if pyxel.btnp(pyxel.KEY_SPACE) and App.start_frag != True:
             App.start_time = pyxel.frame_count
             App.start_frag = True
-        if pyxel.frame_count - App.start_time < 600 and App.start_frag:
+            return False
+        
+        App.game_process_time = pyxel.frame_count - App.start_time
+        #if pyxel.frame_count - App.start_time < 600 and App.start_frag:
+        if App.game_process_time < 600 and App.start_frag: #ゲーム実行
             i = 0
             for b in self.ball:
                 b.move(App)
@@ -337,7 +353,7 @@ class App():
             if pyxel.btnp(pyxel.KEY_RETURN):
                 self.ball.append(Ball(App, 1))
 
-            if pyxel.frame_count % 60 == 0:
+            if pyxel.frame_count % 60 == 0: #定期的なターゲット復活
                 for l in  range(len(Ball.lostlist)):
                     if Ball.lostlist[l][2] == 1:
                         App.target_b.append(Target(App, Ball.lostlist[l][0], 10, Ball.lostlist[l][1], Ball.lostlist[l][2]))
@@ -354,37 +370,50 @@ class App():
                 t.tmove()
             for t in App.target_m:
                 t.tmove()
-
+        #elif pyxel.frame_count - App.start_time >= 600:
+        elif App.game_process_time >= 600 and pyxel.btnp(pyxel.KEY_R): #終了処理
+            self.init()
+            return True
 
     def draw(self):
-        if not App.start_frag:
+        if not App.start_frag: #スタート画面
+            pyxel.rect(0, 0, App.width, App.height, 0)
             pyxel.rect(245, 98, 75, 10, 5)
             pyxel.rect(265, 98, 22, 10, 8)
             pyxel.text(250, 100, "FIT STORY MANIA!!", 10)
             pyxel.text(50, 200, "Left User: WASD & SPACE", 8)
             pyxel.text(400, 200, "Right USER: UP, LEFT, DOWN, RIGHT & ENTER", 6)
             pyxel.text(250, 350, "Push SPACE KEY to Start!!", 11)
-        elif pyxel.frame_count - App.start_time < 600 and App.start_frag:
+        #elif pyxel.frame_count - App.start_time < 600 and App.start_frag:
+        elif App.game_process_time < 600 and App.start_frag: #ゲーム画面
             self.reload()
             for b in self.ball:
                 b.bdraw(self.w1.y1, self.w1.z1, self.w1.y2, self.w1.z2, App)
             #    pyxel.text(300, 200, str(b.z), 0)
             #pyxel.text(300, 225, str(self.totalpoint), 0)
-            if pyxel.frame_count - App.start_time > 450:
-                App.textload((600 - pyxel.frame_count + App.start_time)//30+1, 300, 30, 2, 0)
-                App.textload((600 - pyxel.frame_count + App.start_time)//30+1, 300, App.height - 100, 2, 0)
+            #if pyxel.frame_count - App.start_time > 450:
+            if App.game_process_time > 450: #終了５秒前からカウントダウン
+                #App.textload((600 - pyxel.frame_count + App.start_time)//30+1, 300, 30, 2, 0)
+                #App.textload((600 - pyxel.frame_count + App.start_time)//30+1, 300, App.height - 100, 2, 0)
+                App.textload((600 - (App.game_process_time))//30+1, 300, 30, 2, 0)
+                App.textload((600 - (App.game_process_time))//30+1, 300, App.height - 100, 2, 0)
             #pyxel.text(300, 0, str(pyxel.frame_count), 0)
             for f in self.forcus:
                 if f.user == 0:
                     pyxel.circ(f.x, f.y, 10, 2)
                 elif f.user == 1:
                     pyxel.circ(f.x, f.y, 10, 3)
-        else:
+        #else:
+        elif App.game_process_time >= 600: #終了画面
             pyxel.cls(6)
             App.textload(self.totalpoint_l, 100, 225, 2, 0)
-            pyxel.text(140, 225, "point!!", 7)     
+            pyxel.text(140, 225, "Point!!", 7)     
             App.textload(self.totalpoint_r, 500, 225, 2, 0)
-            pyxel.text(540, 225, "point!!", 7)     
+            pyxel.text(540, 225, "Point!!", 7) 
+            pyxel.text(225, 100, "r:Restart", 0)
+        pyxel.text(100, 100, str(App.game_process_time), 0)
+    
 
 if __name__ == '__main__':
     App()
+    
